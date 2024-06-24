@@ -1,12 +1,16 @@
 package me.progfrog.couponcore.model;
 
+import me.progfrog.couponcore.exception.CouponIssueException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static me.progfrog.couponcore.exception.ErrorCode.INVALID_COUPON_ISSUE_DATE;
+import static me.progfrog.couponcore.exception.ErrorCode.INVALID_COUPON_ISSUE_QUANTITY;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CouponTest {
 
@@ -136,7 +140,8 @@ class CouponTest {
                 .build();
 
         // when & then
-        assertThrows(RuntimeException.class, coupon::issue);
+        CouponIssueException ex = assertThrows(CouponIssueException.class, coupon::issue);
+        assertEquals(ex.getErrorCode(), INVALID_COUPON_ISSUE_QUANTITY);
     }
 
     @Test
@@ -151,6 +156,7 @@ class CouponTest {
                 .build();
 
         // when & then
-        assertThrows(RuntimeException.class, coupon::issue);
+        CouponIssueException ex = assertThrows(CouponIssueException.class, coupon::issue);
+        assertEquals(ex.getErrorCode(), INVALID_COUPON_ISSUE_DATE);
     }
 }
