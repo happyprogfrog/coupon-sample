@@ -8,10 +8,6 @@ import lombok.Getter;
 public class CouponIssueException extends RuntimeException {
 
     private final ErrorCode errorCode;
-    private final String message;
-
-    @Override
-    public String getMessage() {
-        return "[%s] %s".formatted(errorCode, message);
-    }
+    private final String code;
+    private final String reason;
 }
