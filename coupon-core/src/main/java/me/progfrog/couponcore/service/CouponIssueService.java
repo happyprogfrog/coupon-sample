@@ -23,11 +23,9 @@ public class CouponIssueService {
     @Transactional
     public void issue(long couponId, long userId) {
         // 쿠폰 발급에 대한 검증을 진행하고, 검증 성공 시 쿠폰 발급처리까지 진행
-        synchronized (this) {
-            Coupon coupon = findCoupon(couponId);
-            coupon.issue();
-            saveCouponIssue(couponId, userId);
-        }
+        Coupon coupon = findCoupon(couponId);
+        coupon.issue();
+        saveCouponIssue(couponId, userId);
     }
 
    @Transactional(readOnly = true)
