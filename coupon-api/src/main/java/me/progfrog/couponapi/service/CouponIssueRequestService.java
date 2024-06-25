@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.progfrog.couponapi.dto.CouponIssueRequestDto;
 import me.progfrog.couponcore.component.DistributeLockExecutor;
+import me.progfrog.couponcore.service.AsyncCouponIssueServiceV1;
 import me.progfrog.couponcore.service.CouponIssueService;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +14,14 @@ import org.springframework.stereotype.Service;
 public class CouponIssueRequestService {
 
     private final CouponIssueService couponIssueService;
-    private final DistributeLockExecutor distributeLockExecutor;
+    private final AsyncCouponIssueServiceV1 asyncCouponIssueServiceV1;
 
     public void issueRequestV1(CouponIssueRequestDto requestDto) {
         couponIssueService.issue(requestDto.couponId(), requestDto.userId());
         log.info("쿠폰 발급 완료! coupon_id: %s, user_id: %s".formatted(requestDto.couponId(), requestDto.userId()));
+    }
+
+    public void asyncIssueRequestV1(CouponIssueRequestDto requestDto) {
+        asyncCouponIssueServiceV1.issue(requestDto.couponId(), requestDto.userId());
     }
 }
