@@ -23,7 +23,7 @@ public class CouponIssueService {
     @Transactional
     public void issue(long couponId, long userId) {
         // 쿠폰 발급에 대한 검증을 진행하고, 검증 성공 시 쿠폰 발급처리까지 진행
-        Coupon coupon = findCoupon(couponId);
+        Coupon coupon = findCouponWithLock(couponId);
         coupon.issue();
         saveCouponIssue(couponId, userId);
     }
@@ -31,6 +31,12 @@ public class CouponIssueService {
    @Transactional(readOnly = true)
     public Coupon findCoupon(long couponId) {
         return couponJpaRepository.findById(couponId)
+                .orElseThrow(() -> COUPON_NOT_EXIST.build(couponId));
+    }
+
+    @Transactional(readOnly = true)
+    public Coupon findCouponWithLock(long couponId) {
+        return couponJpaRepository.findCouponWithLock(couponId)
                 .orElseThrow(() -> COUPON_NOT_EXIST.build(couponId));
     }
 
