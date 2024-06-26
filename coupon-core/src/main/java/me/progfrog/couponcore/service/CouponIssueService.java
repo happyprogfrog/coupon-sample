@@ -3,9 +3,11 @@ package me.progfrog.couponcore.service;
 import lombok.RequiredArgsConstructor;
 import me.progfrog.couponcore.model.Coupon;
 import me.progfrog.couponcore.model.CouponIssue;
+import me.progfrog.couponcore.model.event.CouponIssueCompleteEvent;
 import me.progfrog.couponcore.repository.mysql.CouponIssueJpaRepository;
 import me.progfrog.couponcore.repository.mysql.CouponIssueRepository;
 import me.progfrog.couponcore.repository.mysql.CouponJpaRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ public class CouponIssueService {
     private final CouponJpaRepository couponJpaRepository;
     private final CouponIssueJpaRepository couponIssueJpaRepository;
     private final CouponIssueRepository couponIssueRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public void issue(long couponId, long userId) {
@@ -26,6 +29,7 @@ public class CouponIssueService {
         Coupon coupon = findCouponWithLock(couponId);
         coupon.issue();
         saveCouponIssue(couponId, userId);
+        publishCouponEvent(coupon);
     }
 
    @Transactional(readOnly = true)
@@ -54,6 +58,12 @@ public class CouponIssueService {
         CouponIssue issue = couponIssueRepository.findFirstCouponIssue(couponId, userId);
         if (issue != null) {
             throw DUPLICATED_COUPON_ISSUE.build(userId, couponId);
+        }
+    }
+
+    private void publishCouponEvent(Coupon coupon) {
+        if (coupon.isIssueComplete()) {
+            applicationEventPublisher.publishEvent(new CouponIssueCompleteEvent(coupon.getId()));
         }
     }
 }

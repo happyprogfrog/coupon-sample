@@ -10,11 +10,13 @@ import me.progfrog.couponcore.model.CouponType;
 import java.time.LocalDateTime;
 
 import static me.progfrog.couponcore.exception.ErrorCode.INVALID_COUPON_ISSUE_DATE;
+import static me.progfrog.couponcore.exception.ErrorCode.INVALID_COUPON_ISSUE_QUANTITY;
 
 public record CouponRedisEntity(
         Long id,
         CouponType couponType,
         Integer totalQuantity,
+        boolean availableIssueQuantity,
 
         @JsonSerialize(using = LocalDateTimeSerializer.class)
         @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -30,6 +32,7 @@ public record CouponRedisEntity(
                 coupon.getId(),
                 coupon.getCouponType(),
                 coupon.getTotalQuantity(),
+                coupon.isAvailableIssueQuantity(),
                 coupon.getDateIssueStart(),
                 coupon.getDateIssueEnd()
         );
@@ -41,6 +44,9 @@ public record CouponRedisEntity(
     }
 
     public void checkIssuableCoupon() {
+        if (!availableIssueQuantity) {
+            throw INVALID_COUPON_ISSUE_QUANTITY.build();
+        }
         if (!isAvailableIssueDate()) {
             throw INVALID_COUPON_ISSUE_DATE.build(LocalDateTime.now(), dateIssueStart, dateIssueStart);
         }
