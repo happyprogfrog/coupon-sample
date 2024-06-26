@@ -1,14 +1,27 @@
 package me.progfrog.couponcore.repository.redis;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import me.progfrog.couponcore.repository.redis.dto.CouponPushQueueRequest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+import static me.progfrog.couponcore.exception.ErrorCode.FAIL_COUPON_PUSH_QUEUE_REQUEST;
+import static me.progfrog.couponcore.util.CouponRedisUtils.getIssueRequestKey;
+import static me.progfrog.couponcore.util.CouponRedisUtils.getIssueRequestQueue;
 
 @RequiredArgsConstructor
 @Repository
 public class RedisRepository {
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisScript<String> issueScript = issueRequestScript();
+    private final String issueRequestQueueKey = getIssueRequestQueue();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public Long sAdd(String key, String value) {
         return redisTemplate.opsForSet().add(key, value);
@@ -24,5 +37,39 @@ public class RedisRepository {
 
     public Long rPush(String key, String value) {
         return redisTemplate.opsForList().rightPush(key, value);
+    }
+
+    public void issueRequest(long couponId, long userId, int totalIssueQuantity) {
+        String issueRequestKey = getIssueRequestKey(couponId);
+        CouponPushQueueRequest couponPushQueueRequest = new CouponPushQueueRequest(couponId, userId);
+        try {
+            String code = redisTemplate.execute(
+                    issueScript,
+                    List.of(issueRequestKey,issueRequestQueueKey),          // KEYS[1], KEYS[2]
+                    String.valueOf(userId),                                 // ARGV(1)
+                    String.valueOf(totalIssueQuantity),                     // ARGV(2)
+                    objectMapper.writeValueAsString(couponPushQueueRequest) // ARGV(3)
+            );
+            CouponIssueRequestCode.checkRequestResult(CouponIssueRequestCode.find(code));
+        } catch (JsonProcessingException e) {
+            throw FAIL_COUPON_PUSH_QUEUE_REQUEST.build(couponPushQueueRequest);
+        }
+    }
+
+    private RedisScript<String> issueRequestScript() {
+        String script = """
+                if redis.call('SISMEMBER', KEYS[1], ARGV[1]) == 1 then
+                    return '2'
+                end
+                
+                if tonumber(ARGV[2]) > redis.call('SCARD', KEYS[1]) then
+                    redis.call('SADD', KEYS[1], ARGV[1])
+                    redis.call('RPUSH', KEYS[2], ARGV[3])
+                    return '1'
+                end
+                
+                return '3'
+                """;
+        return RedisScript.of(script, String.class);
     }
 }
