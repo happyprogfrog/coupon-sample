@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.progfrog.couponcore.model.Coupon;
 import me.progfrog.couponcore.repository.redis.dto.CouponRedisEntity;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,16 @@ public class CouponCacheService {
     @Cacheable(cacheNames = "coupon", cacheManager = "localCacheManager")
     public CouponRedisEntity getCouponLocalCache(long couponId) {
         return proxy().getCouponCache(couponId);
+    }
+
+    @CachePut(cacheNames = "coupon")
+    public CouponRedisEntity putCouponCache(long couponId) {
+        return getCouponCache(couponId);
+    }
+
+    @CachePut(cacheNames = "coupon", cacheManager = "localCacheManager")
+    public CouponRedisEntity putCouponLocalCache(long couponId) {
+        return getCouponLocalCache(couponId);
     }
 
     private CouponCacheService proxy() {
