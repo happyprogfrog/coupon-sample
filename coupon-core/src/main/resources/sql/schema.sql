@@ -1,3 +1,6 @@
+CREATE DATABASE `coupon`;
+USE `coupon`;
+
 CREATE TABLE `coupon`.`coupons`
 (
     `id`                   BIGINT(20)   NOT NULL AUTO_INCREMENT,
